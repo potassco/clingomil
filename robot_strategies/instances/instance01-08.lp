@@ -1,0 +1,1 @@
+pos_ex(robot,"[robot_pos(1),end_pos(3),places([place(1,tea,cup(up,empty)),place(2,tea,cup(up,empty))])]","[robot_pos(3),end_pos(3),places([place(1,tea,cup(up,tea)),place(2,tea,cup(up,tea))])]").
