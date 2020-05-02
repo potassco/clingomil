@@ -1,0 +1,3 @@
+pos_ex(robot,"[robot_pos(1),end_pos(3),places([place(1,coffee,cup(up,empty)),place(2,coffee,cup(up,empty))])]","[robot_pos(3),end_pos(3),places([place(1,coffee,cup(up,coffee)),place(2,coffee,cup(up,coffee))])]").
+pos_ex(robot,"[robot_pos(1),end_pos(3),places([place(1,coffee,cup(up,empty)),place(2,coffee,cup(up,empty))])]","[robot_pos(3),end_pos(3),places([place(1,coffee,cup(up,coffee)),place(2,coffee,cup(up,coffee))])]").
+pos_ex(robot,"[robot_pos(1),end_pos(4),places([place(1,tea,cup(up,empty)),place(2,tea,cup(up,empty)),place(3,tea,cup(up,empty))])]","[robot_pos(4),end_pos(4),places([place(1,tea,cup(up,tea)),place(2,tea,cup(up,tea)),place(3,tea,cup(up,tea))])]").
