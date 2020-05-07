@@ -1,128 +1,91 @@
-import re
 import os
+import re
 import json
-import clingo
 from itertools import count
-from robot_strategies.robot_bk_clingo import RobotLookupExt, RobotContext
-from east_west_trains.trains_bk_clingo import TrainsLookupExt, TrainsContext
-from string_transformation.strings_bk_clingo import (
-    StringsLookupExt,
-    StringsContext,
-)
+from collections import defaultdict
+from time import time as current_time
+from robot_strategies.robot_bk_clingo import RobotMIL
+from east_west_trains.trains_bk_clingo import TrainsMIL
+from string_transformation.strings_bk_clingo import StringsMIL
 
 
-benchmarks = {
-    "robot": {
-        "folder": "robot_strategies",
-        "clingo": "robot_clingo.lp",
-        "lookup": RobotLookupExt,
-        "context": RobotContext,
-    },
-    "trains": {
-        "folder": "east_west_trains",
-        "clingo": "trains_clingo.lp",
-        "lookup": TrainsLookupExt,
-        "context": TrainsContext,
-    },
-    "strings": {
-        "folder": "string_transformation",
-        "clingo": "strings_clingo.lp",
-        "lookup": StringsLookupExt,
-        "context": StringsContext,
-    },
+benchmarks = [
+    ("robot", RobotMIL, "robot_strategies/instances"),
+    ("trains", TrainsMIL, "east_west_trains/instances"),
+    ("strings", StringsMIL, "string_transformation/instances"),
+]
+times = {
+    "fc": {b[0]: defaultdict(dict) for b in benchmarks},
+    "sa": {b[0]: defaultdict(dict) for b in benchmarks},
 }
 
 
-times = {k: {} for k in benchmarks.keys()}
+def run_instance(milclass, mode, functional, instance, timeout):
+    name = milclass.__name__
+    mil = milclass()
+    mil.load_examples(instance)
 
-
-def make_control(file, examples, args, lookupClass, contextClass):
-    ctl = clingo.Control(arguments=args)
-    lookup = lookupClass(ctl)
-    # ctl.configuration.solve.models = 0
-    ctl.configuration.solve.parallel_mode = "4,split"
-    ctl.register_propagator(lookup.Propagator)
-
-    ctl.load(file)
-    ctl.add("examples", [], examples)
-    ctl.add("examples", [], "#show. #show meta/4.")
-
-    ctl.ground(
-        [("base", []), ("examples", [])], context=contextClass(),
-    )
-
-    return ctl
-
-
-# I've tried multishot solving, but ran into problems:
-# The skolem atoms rely on the size of the hypothesis, the correct grounding of
-# the order relies on the skolem atoms, and the order is needed to do meta-
-# substitutions. So multi-shot solving is not really viable in a way that
-# incrementally grounds the size/skolems. On the other hand, making each skolem
-# atom up to some maximum value external would still require grounding as if
-# all the skolems were facts, so this is not viable either. I might come back
-# to that in the future.
-
-
-def run_instance(benchmark, name, timeout):
-    fname = os.path.join(benchmark["folder"], "instances", name)
-    with open(fname) as lp:
-        examples = "\n".join([(e) for e in lp.readlines()])
-
-    time_remaining = timeout
-    for step in count(0):
-        for skolems in range(step):
+    start = current_time()
+    for size in count(1):
+        for skolems in range(0, size):
+            mil.reset_control(size, skolems)
             print(
-                f"\r{'GROUNDING':11s} {name}: size {step}, skolems {skolems}",
+                f"\r{'GROUNDING':11s} {name} with {mode} on {instance}: size "
+                + f"{size}, skolems {skolems}",
                 end="",
             )
-            ctl = make_control(
-                os.path.join(benchmark["folder"], benchmark["clingo"]),
-                examples,
-                [f"-c size={step}", f"-c skolems={skolems}"],
-                benchmark["lookup"],
-                benchmark["context"],
-            )
+            mil.ground(mode=mode, functional=functional)
 
             print(
-                f"\r{'SOLVING':11s} {name}: size {step}, skolems {skolems}",
+                f"\r{'SOLVING':11s} {name} with {mode} on {instance}: size "
+                + f"{size}, skolems {skolems}",
                 end="",
             )
-
-            models = []
-            with ctl.solve(
+            model = []
+            with mil.solve(
                 async_=True,
-                on_model=lambda m: models.append(m.symbols(atoms=True)),
+                on_model=lambda m: model.extend(m.symbols(shown=True)),
             ) as handle:
-                finished = handle.wait(time_remaining)
-                if not finished:
+                terminated = False
+                while not terminated and current_time() - start < timeout:
+                    terminated = handle.wait(5)
+                if not terminated:
                     handle.cancel()
                 result = handle.get()
+                time = current_time() - start
 
-                time_remaining -= ctl.statistics["summary"]["times"]["total"]
                 if result.satisfiable or result.interrupted:
                     sat = "SATISFIABLE" if result.satisfiable else "TIMEOUT"
                     print(
-                        f"\r{sat:11s} {name}: size {step}, skolems {skolems}"
-                        + f", {timeout - time_remaining:.1f} seconds total"
+                        f"\r{sat:11s} {name} with {mode} on {instance}: "
+                        + f"size {size}, skolems {skolems} {time:.1f} seconds"
                     )
-                    return result, models, timeout - time_remaining
+                    return result, model, time
 
 
-benchmark = "trains"
-assert benchmark in benchmarks.keys()
+def main():
+    for mode in ["fc", "sa"]:
+        for name, milclass, instances in benchmarks:
+            is_robot = issubclass(milclass, RobotMIL)
+            for examples in sorted(os.listdir(instances))[:5]:
+                if mode == "fc" and is_robot:
+                    continue
 
-for instance in sorted(
-    os.listdir(f"{benchmarks[benchmark]['folder']}/instances")
-):
-    match = re.fullmatch(r"instance(\d+?)-(\d+?).lp", instance)
-    size, num = match.group(1), match.group(2)
+                match = re.fullmatch(r"instance(\d+?)-(\d+?).lp", examples)
+                size, num = match.group(1), match.group(2)
 
-    result, models, time = run_instance(benchmarks[benchmark], instance, 600)
+                result, model, time = run_instance(
+                    milclass,
+                    mode,
+                    is_robot,
+                    os.path.join(instances, examples),
+                    60,
+                )
 
-    if size not in times[benchmark].keys():
-        times[benchmark][size] = {}
-    times[benchmark][size][num] = time
+                times[mode][name][size][num] = time
+                with open("times.json", "w") as f:
+                    json.dump(times, f, indent=2, sort_keys=True)
 
-    with open("times.json", "w") as f:
-        json.dump(times, f, indent=4, sort_keys=True)
+
+if __name__ == "__main__":
+    main()
