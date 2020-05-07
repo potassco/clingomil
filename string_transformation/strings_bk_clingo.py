@@ -1,29 +1,28 @@
-from lib import LookupExt
+import clingo
+from clingoMIL import clingoMIL
 
 
-class StringsLookupExt(LookupExt):
+class StringsMIL(clingoMIL):
+    @clingoMIL.unary_bk
     def isA(self, string):
-        return string[0].string[1] == "a"
+        return string.string[1] == "a"
 
+    @clingoMIL.unary_bk
     def isB(self, string):
-        return string[0].string[1] == "b"
+        return string.string[1] == "b"
 
+    @clingoMIL.unary_bk
     def isC(self, string):
-        return string[0].string[1] == "c"
+        return string.string[1] == "c"
 
-
-class StringsContext(object):
+    @clingoMIL.binary_bk
     def remove(self, string):
         cs = [c for c in string.string if c not in "[,]"]
-        if len(cs) == 0:
-            return []
+        if len(cs) > 0:
+            yield clingo.String(f"[{','.join(cs[1:])}]")
 
-        # print(f'{string.string} remove {"[" + ",".join(cs[1:]) + "]"}')
-        return "[" + ",".join(cs[1:]) + "]"
-
+    @clingoMIL.binary_bk
     def switch(self, string):
         cs = [c for c in string.string if c not in "[,]"]
-        if len(cs) < 2:
-            return []
-        # print(f'{string.string} switch {"[" + ",".join([cs[1], cs[0]] + cs[2:]) + "]"}')
-        return "[" + ",".join([cs[1], cs[0]] + cs[2:]) + "]"
+        if len(cs) >= 2:
+            yield clingo.String(f"[{','.join([cs[1], cs[0]] + cs[2:])}]")
