@@ -1,8 +1,11 @@
-import clingo
-import importlib.resources as pkg_resources
+import clingo as _clingo
+import importlib.resources as _pkg_resources
 
-from . import metarules as metarules_resource
+from . import _metarules
 from ._functions import induced_program, solve_incrementally
+
+
+__all__ = ["clingoMIL", "induced_program", "solve_incrementally"]
 
 
 class clingoMIL:
@@ -38,16 +41,16 @@ class clingoMIL:
         kwargs["arguments"].extend(
             ["-c size={}".format(size), "-c skolems={}".format(skolems)]
         )
-        self.control = clingo.Control(*args, **kwargs)
+        self.control = _clingo.Control(*args, **kwargs)
         self.solve = self.control.solve
 
     def use_metarules(self, metarules=None) -> None:
         # load (and verify?) metarules used during grounding
         # if metarules is None, all provided are used
         provided = []
-        for file in pkg_resources.contents(metarules_resource):
+        for file in _pkg_resources.contents(_metarules):
             if (
-                not pkg_resources.is_resource(metarules_resource, file)
+                not _pkg_resources.is_resource(_metarules, file)
                 or file == "__init__.py"
             ):
                 continue
@@ -65,7 +68,7 @@ class clingoMIL:
     def load_examples(self, file) -> None:
         # load examples from file, convert into internal representation
         # they must be in the "base" subprogram
-        ctl = clingo.Control(arguments=["--warn=none"])
+        ctl = _clingo.Control(arguments=["--warn=none"])
         ctl.load(file)
         ctl.add("base", [], "#show pos_ex/3. #show neg_ex/3.")
         ctl.ground([("base", [])])

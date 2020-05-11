@@ -4,8 +4,8 @@ from typing import List
 from collections import defaultdict
 import importlib.resources as pkg_resources
 
-from . import encodings
-from . import metarules as metarules_resource
+from . import _encodings as encodings_resource
+from . import _metarules as metarules_resource
 
 
 class IDMaker:
@@ -16,7 +16,7 @@ class IDMaker:
         if table is None:
             table = type(obj)
         if obj not in self._ids[table]:
-            self._ids[table][obj] = max([-1, *self._ids[table].values()]) + 1
+            self._ids[table][obj] = max([0, *self._ids[table].values()]) + 1
         return self._ids[table][obj]
 
 
@@ -115,7 +115,7 @@ def check_deduced(sequences, metarules, assigned_meta_symbols) -> bool:
 
     models = []
     ctl = clingo.Control()
-    with pkg_resources.path(encodings, "check_deduced.lp") as path:
+    with pkg_resources.path(encodings_resource, "check_deduced.lp") as path:
         ctl.load(str(path))
     ctl.ground([("base", [])], context=FailNegContext())
     with ctl.solve(yield_=True) as handle:
@@ -245,20 +245,20 @@ def _make_sa_propagator(self, functional) -> object:
                     if sym_name != ex_name:
                         continue
 
-                    # if sym_args == ex_args:
-                    #     print(sym_args)
+                    if not functional and not ex_args == sym_args:
+                        continue
 
-                    if (ex_args == sym_args and not functional) or (
-                        ex_args != sym_args and functional
+                    if functional and (
+                        ex_args[0] != sym_args[0] or ex_args[1] == sym_args[1]
                     ):
-                        # as we return after adding the nogood, we dont have to
-                        # check for its return value (on False we MUST return,
-                        # but we do eitherway)
-                        # print(inner_self.assigned_metas)
-                        control.add_nogood(
-                            inner_self.assigned_metas, lock=True
-                        )
-                        return
+                        continue
+
+                    # as we return after adding the nogood, we dont have to
+                    # check for its return value (on False we MUST return,
+                    # but we do eitherway)
+                    # print(inner_self.assigned_metas)
+                    control.add_nogood(inner_self.assigned_metas, lock=True)
+                    return
 
     return SAPropagator
 
@@ -280,7 +280,7 @@ def _ground_sa(self, functional) -> None:
         with pkg_resources.path(metarules_resource, f"{rule}.lp") as path:
             self.control.load(str(path))
 
-    with pkg_resources.path(encodings, "clingomil_sa.lp") as path:
+    with pkg_resources.path(encodings_resource, "clingomil_sa.lp") as path:
         self.control.load(str(path))
 
     context = self._make_sa_context(ids)

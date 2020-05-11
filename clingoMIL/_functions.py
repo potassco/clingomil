@@ -2,7 +2,7 @@ import clingo
 from itertools import count
 import importlib.resources as pkg_resources
 
-from . import metarules as metarules_resource
+from . import _metarules as metarules_resource
 
 
 def induced_program(symbols):
