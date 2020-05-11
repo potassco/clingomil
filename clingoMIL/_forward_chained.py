@@ -1,8 +1,8 @@
 import clingo
 import importlib.resources as pkg_resources
 
-from . import encodings
-from . import metarules as metarules_resource
+from . import _encodings as encodings_resource
+from . import _metarules as metarules_resource
 
 
 def _make_fc_context(self) -> object:
@@ -27,7 +27,7 @@ def _ground_fc(self, functional) -> None:
     example_strs = ["{}.".format(str(e)) for e in self.examples]
     self.control.add("examples", [], "".join(example_strs))
 
-    with pkg_resources.path(encodings, "clingomil_fc.lp") as path:
+    with pkg_resources.path(encodings_resource, "clingomil_fc.lp") as path:
         self.control.load(str(path))
 
     for rule in self.metarules:
