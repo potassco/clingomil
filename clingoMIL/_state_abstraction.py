@@ -91,46 +91,6 @@ def state_sequences(fluents, actions, start, goal) -> List[StateSequence]:
     return sequences
 
 
-def check_deduced(sequences, metarules, assigned_meta_symbols) -> bool:
-    unary_bk, binary_bk = set(), set()
-    for seq in sequences:
-        for i in range(len(seq.states)):
-            for f in seq.fluents[i]:
-                unary_bk.add((clingo.Function(f.__name__), seq.states[i]))
-            if i < len(seq.actions):
-                action = seq.actions[i]
-                [c1, c2] = seq.states[i : i + 2]
-                binary_bk.add((clingo.Function(action.__name__), c1, c2))
-
-    class FailNegContext:
-        def unary(self):
-            yield from unary_bk
-
-        def binary(self):
-            yield from binary_bk
-
-        def meta(self):
-            for meta in assigned_meta_symbols:
-                yield tuple(meta.arguments)
-
-    models = []
-    ctl = clingo.Control()
-    with pkg_resources.path(encodings_resource, "check_deduced.lp") as path:
-        ctl.load(str(path))
-    ctl.ground([("base", [])], context=FailNegContext())
-    with ctl.solve(yield_=True) as handle:
-        for m in handle:
-            models.append(m.symbols(shown=True))
-
-    if len(models) != 1:
-        raise RuntimeError(
-            "the number of models found was not equal to one while checking "
-            + "for failneg"
-        )
-
-    return models[0]
-
-
 def _make_sa_context(self, ids) -> object:
     # create and return context object for grounding with mode ="sa"
     # maybe this should be public so it can be overwritten to provide bk in
@@ -180,21 +140,25 @@ def _make_sa_context(self, ids) -> object:
     return SAContext
 
 
+def check_fail(self, examples, meta_assignments, functional):
+    ctl = clingo.Control(arguments=["--warn=none"])
+
+    for symbol in [*examples, *meta_assignments]:
+        ctl.add("base", [], f"{str(symbol)}.")
+    with pkg_resources.path(encodings_resource, "check_fail.lp") as path:
+        ctl.load(str(path))
+
+    ctl.ground([("base", [])], context=self._make_fc_context()())
+    ctl.assign_external(clingo.Function("functional"), True)
+
+    model = []
+    ctl.solve(on_model=lambda m: model.extend(m.symbols(shown=True)))
+    return model == [clingo.Function("fail")]
+
+
 def _make_sa_propagator(self, functional) -> object:
     # create and return propagator for solving with mode="sa"
     # functional means that only positive example are allowed to be derived
-
-    # generating sequences for positive and negative examples
-    sequences = {}
-    for example in self.examples:
-        [start, goal] = tuple(example.arguments[1:])
-        if example.match("neg_ex" if not functional else "pos_ex", 3):
-            sequences[example] = state_sequences(
-                self._unary_bk_functions(),
-                self._binary_bk_functions(),
-                start,
-                goal,
-            )
 
     class SAPropagator:
         def __init__(inner_self):
@@ -231,34 +195,15 @@ def _make_sa_propagator(self, functional) -> object:
                 symbolic_atom = inner_self.meta_symbolic_atoms[c]
                 metas.append(symbolic_atom.symbol)
 
-            for example in sequences.keys():
-                deduced = check_deduced(
-                    sequences[example], self.metarules, metas
-                )
+            fail = check_fail(self, self.examples, metas, functional)
 
-                ex_name = example.arguments[0]
-                ex_args = example.arguments[1:]
-                for symbol in deduced:
-                    sym_name = symbol.arguments[0]
-                    sym_args = symbol.arguments[1:]
-
-                    if sym_name != ex_name:
-                        continue
-
-                    if not functional and not ex_args == sym_args:
-                        continue
-
-                    if functional and (
-                        ex_args[0] != sym_args[0] or ex_args[1] == sym_args[1]
-                    ):
-                        continue
-
-                    # as we return after adding the nogood, we dont have to
-                    # check for its return value (on False we MUST return,
-                    # but we do eitherway)
-                    # print(inner_self.assigned_metas)
-                    control.add_nogood(inner_self.assigned_metas, lock=True)
-                    return
+            # as we return after adding the nogood, we dont have to
+            # check for its return value (on False we MUST return,
+            # but we do eitherway)
+            # print(inner_self.assigned_metas)
+            if fail:
+                control.add_nogood(inner_self.assigned_metas, lock=True)
+                return
 
     return SAPropagator
 

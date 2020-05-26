@@ -45,4 +45,4 @@ def _ground_fc(self, functional) -> None:
         context=context(),
     )
 
-    self.control.assign_external("functional", functional)
+    self.control.assign_external(clingo.Function("functional"), functional)
