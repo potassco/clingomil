@@ -156,6 +156,91 @@ def check_fail(self, examples, meta_assignments, functional):
     return model == [clingo.Function("fail")]
 
 
+def expand(meta_assignment_fs, function):
+    # expansion as used in check_fail_py
+    # returns predicates that need to be true for rule body of rule with the
+    # functions predicate as head to be satisfied
+    # TODO: metarules are hardcoded here
+
+    def convert(sym):
+        if sym.type == clingo.SymbolType.Number:
+            return sym.number
+        if sym.type == clingo.SymbolType.Function:
+            return sym.name
+        raise RuntimeError(
+            f"predicate symbol was neither {clingo.SymbolType.Function} "
+            + f"nor {clingo.SymbolType.Number}"
+        )
+
+    expansions = []
+
+    for ass in meta_assignment_fs:
+        args = [convert(sym) for sym in ass.arguments]
+        if args[1] != function:
+            continue
+        if args[0] in ["precon", "postcon", "chain"]:
+            expansions.append([args[2], args[3]])
+        if args[0] in ["tailrec"]:
+            expansions.append([args[2], args[1]])
+
+    return expansions
+
+
+def check_fail_py(self, example, meta_assignments, functional):
+    # check if negative example is induced if not functional
+    # check if something different than positive example is induced if
+    # functional
+    # seen is protection against infinite loops (e.g. switch in strings)
+    queue = [([example.arguments[0].name], example.arguments[1])]
+    seen = []
+
+    # this function appends to the queue, while appending a copy to seen
+    def append(x):
+        if x in seen:
+            return
+        (functions, state) = x
+        queue.append((functions, state))
+        # here, we have to copy because functions are popped within queue
+        seen.append((copy(functions), state))
+
+    while len(queue) > 0:
+        (functions, state) = queue.pop(0)
+        if functions == []:
+            if functional and state != example.arguments[2]:
+                return True
+            elif not functional and state == example.arguments[2]:
+                return True
+            else:
+                continue
+
+        skip_expansion = False
+        function = functions.pop(0)
+
+        # function is "n" because of n in tailrec (3rd predicate unused)
+        if function == "n":
+            append((functions, state))
+            skip_expansion = True
+
+        for unary_f in self._unary_bk_functions():
+            if unary_f.__name__ == function and unary_f(state):
+                append((functions, state))
+                skip_expansion = True
+
+        for binary_f in self._binary_bk_functions():
+            if binary_f.__name__ == function:
+                for successor in binary_f(state):
+                    append((functions, successor))
+                skip_expansion = True
+
+        # expansion if the predicate (function) is untrue for the state by bk,
+        # so it is checked which rules can make it true
+        if not skip_expansion:
+            for successors in expand(meta_assignments, function):
+                append((successors + functions, state))
+
+    return False
+
+
 def _make_sa_propagator(self, functional) -> object:
     # create and return propagator for solving with mode="sa"
     # functional means that only positive example are allowed to be derived
@@ -195,15 +280,20 @@ def _make_sa_propagator(self, functional) -> object:
                 symbolic_atom = inner_self.meta_symbolic_atoms[c]
                 metas.append(symbolic_atom.symbol)
 
-            fail = check_fail(self, self.examples, metas, functional)
+            examples = filter(
+                lambda s: s.match("pos_ex" if functional else "neg_ex", 3),
+                self.examples,
+            )
 
-            # as we return after adding the nogood, we dont have to
-            # check for its return value (on False we MUST return,
-            # but we do eitherway)
-            # print(inner_self.assigned_metas)
-            if fail:
-                control.add_nogood(inner_self.assigned_metas, lock=True)
-                return
+            for example in examples:
+                # as we return after adding the nogood, we dont have to
+                # check for its return value (on False we MUST return,
+                # but we do eitherway)
+                # print(inner_self.assigned_metas)
+                if check_fail_py(self, example, metas, functional):
+                    # print(metas)
+                    control.add_nogood(inner_self.assigned_metas, lock=True)
+                    return
 
     return SAPropagator
 
