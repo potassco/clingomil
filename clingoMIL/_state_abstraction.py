@@ -291,6 +291,7 @@ def _make_sa_propagator(self, functional) -> object:
             # but we do eitherway)
             if check_fail_pl(self, examples, metas, functional):
                 control.add_nogood(inner_self.assigned_metas, lock=True)
+                return
 
     return SAPropagator
 

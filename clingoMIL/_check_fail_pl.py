@@ -1,8 +1,27 @@
-import clingo
+import sys
 from typing import Union
 
 from . import _functions
-from ._pyswip import Prolog, registerForeign, Atom, Variable
+from ._pyswip.prolog import PrologError
+from ._pyswip import (
+    Prolog,
+    PrologMT,
+    registerForeign,
+    Atom,
+    Variable,
+)
+
+
+# Creating Prolog instance. Should probably be changed to be lazy
+try:
+    prolog = PrologMT()
+except PrologError as e:
+    print(
+        f"Warning: {str(e)}. "
+        + "Using standard Prolog instance (no multithreading support)",
+        file=sys.stderr,
+    )
+    prolog = Prolog()
 
 
 # The following two functions are used in the foreign functions helpers.
@@ -22,7 +41,7 @@ def binary_bg(symbol):
 # These are helper functions for the foreign functions.
 # Depending on p and y being variables or atoms, one of these is called
 def unary_prove(p: str, x: str) -> bool:
-    for proved_p in unary_bg(clingo.String(x)):
+    for proved_p in unary_bg(_functions.to_symbol(x)):
         if proved_p == p:
             return True
     return False
@@ -83,7 +102,7 @@ def import_binary(
     return False
 
 
-prolog = Prolog()
+# Loading logic program and registering foreign functions
 prolog.consult("clingoMIL/_encodings/check_fail_pl.pl")
 registerForeign(import_unary, arity=2)
 registerForeign(import_binary, arity=3)
@@ -93,6 +112,7 @@ registerForeign(import_binary, arity=3)
 # Asserts examples and meta assignments, queries fail, reverts assertions
 def check_fail_pl(self, examples, meta_assignments, functional):
     global unary_bg, binary_bg
+
     context = self._make_fc_context()
     unary_bg.generator = lambda sym: context.unary(self, sym)
     binary_bg.generator = lambda sym: context.binary(self, sym)

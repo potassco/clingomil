@@ -27,4 +27,5 @@
 __VERSION__ = "0.2.7"
 
 from .prolog import Prolog
+from .prologMT import PrologMT
 from .easy import *
