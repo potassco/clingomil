@@ -68,3 +68,24 @@ def solve_incrementally(mil, *args, **kwargs):
             )
             if res.satisfiable:
                 return res, model
+
+
+def from_symbol(symbol):
+    if symbol.type == clingo.SymbolType.Number:
+        return symbol.number
+    if symbol.type == clingo.SymbolType.String:
+        return symbol.string
+    if symbol.type == clingo.SymbolType.Function:
+        return symbol.name
+    raise ValueError(f"could not convert {symbol}")
+
+
+def to_symbol(obj):
+    if isinstance(obj, int):
+        return clingo.Number(obj)
+    if isinstance(obj, str):
+        return clingo.String(obj)
+        return clingo.Number(obj)
+    if isinstance(obj, str):
+        return clingo.String(obj)
+    raise NotImplementedError(f"conversion of {type(obj)} to {clingo.Symbol}")

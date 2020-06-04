@@ -4,6 +4,7 @@ from typing import List
 from collections import defaultdict
 import importlib.resources as pkg_resources
 
+from ._check_fail_pl import check_fail_pl
 from . import _encodings as encodings_resource
 from . import _metarules as metarules_resource
 
@@ -285,15 +286,11 @@ def _make_sa_propagator(self, functional) -> object:
                 self.examples,
             )
 
-            for example in examples:
-                # as we return after adding the nogood, we dont have to
-                # check for its return value (on False we MUST return,
-                # but we do eitherway)
-                # print(inner_self.assigned_metas)
-                if check_fail_py(self, example, metas, functional):
-                    # print(metas)
-                    control.add_nogood(inner_self.assigned_metas, lock=True)
-                    return
+            # as we return after adding the nogood, we dont have to
+            # check for its return value (on False we MUST return,
+            # but we do eitherway)
+            if check_fail_pl(self, examples, metas, functional):
+                control.add_nogood(inner_self.assigned_metas, lock=True)
 
     return SAPropagator
 
