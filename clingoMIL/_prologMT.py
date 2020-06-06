@@ -15,7 +15,7 @@
 #    top-level. """
 
 import ctypes
-from . import Prolog, prolog, core
+from pyswip import Prolog, prolog, core
 
 
 class PrologMT(Prolog):

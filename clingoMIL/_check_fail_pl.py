@@ -1,15 +1,17 @@
 import sys
 from typing import Union
+import importlib.resources as _pkg_resources
 
-from . import _functions
-from ._pyswip.prolog import PrologError
-from ._pyswip import (
+from pyswip.prolog import PrologError
+from pyswip import (
     Prolog,
-    PrologMT,
     registerForeign,
     Atom,
     Variable,
 )
+
+from ._prologMT import PrologMT
+from . import _functions, _encodings
 
 
 # Creating Prolog instance. Should probably be changed to be lazy
@@ -103,7 +105,8 @@ def import_binary(
 
 
 # Loading logic program and registering foreign functions
-prolog.consult("clingoMIL/_encodings/check_fail_pl.pl")
+with _pkg_resources.path(_encodings, "check_fail_pl.pl") as path:
+    prolog.consult(str(path))
 registerForeign(import_unary, arity=2)
 registerForeign(import_binary, arity=3)
 
