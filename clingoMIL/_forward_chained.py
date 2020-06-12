@@ -2,7 +2,6 @@ import clingo
 import importlib.resources as pkg_resources
 
 from . import _encodings as encodings_resource
-from . import _metarules as metarules_resource
 
 
 def _make_fc_context(self) -> object:
@@ -30,19 +29,9 @@ def _ground_fc(self, functional) -> None:
     with pkg_resources.path(encodings_resource, "clingomil_fc.lp") as path:
         self.control.load(str(path))
 
-    for rule in self.metarules:
-        with pkg_resources.path(metarules_resource, f"{rule}.lp") as path:
-            self.control.load(str(path))
-
     context = self._make_fc_context()
     self.control.ground(
-        [
-            ("base", []),
-            ("substitution", []),
-            ("deduction", []),
-            ("examples", []),
-        ],
-        context=context(),
+        [("base", []), ("examples", []),], context=context(),
     )
 
     self.control.assign_external(clingo.Function("functional"), functional)

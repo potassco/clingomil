@@ -6,7 +6,6 @@ import importlib.resources as pkg_resources
 
 from ._check_fail_pl import check_fail_pl
 from . import _encodings as encodings_resource
-from . import _metarules as metarules_resource
 
 
 class IDMaker:
@@ -309,20 +308,11 @@ def _ground_sa(self, functional) -> None:
 
     example_strs = ["{}.".format(str(e)) for e in id_examples]
     self.control.add("examples", [], "".join(example_strs))
-    for rule in self.metarules:
-        with pkg_resources.path(metarules_resource, f"{rule}.lp") as path:
-            self.control.load(str(path))
 
     with pkg_resources.path(encodings_resource, "clingomil_sa.lp") as path:
         self.control.load(str(path))
 
     context = self._make_sa_context(ids)
     self.control.ground(
-        [
-            ("base", []),
-            ("substitution", []),
-            ("deduction", []),
-            ("examples", []),
-        ],
-        context=context(),
+        [("base", []), ("examples", []),], context=context(),
     )
