@@ -1,11 +1,20 @@
 import clingo as _clingo
-import importlib.resources as _pkg_resources
 
-from . import _metarules
-from ._functions import induced_program, solve_incrementally
+from ._functions import (
+    induced_program,
+    solve_incrementally,
+    from_symbol,
+    to_symbol,
+)
 
 
-__all__ = ["clingoMIL", "induced_program", "solve_incrementally"]
+__all__ = [
+    "clingoMIL",
+    "induced_program",
+    "solve_incrementally",
+    "from_symbol",
+    "to_symbol",
+]
 
 
 class clingoMIL:
@@ -24,9 +33,8 @@ class clingoMIL:
     )
 
     def __init__(self, *args, **kwargs):
-        # initialize examples and metarules
+        # initialize examples
         self.examples = []
-        self.use_metarules(metarules=None)
 
         # create clingo control object
         self.control = None
@@ -43,27 +51,6 @@ class clingoMIL:
         )
         self.control = _clingo.Control(*args, **kwargs)
         self.solve = self.control.solve
-
-    def use_metarules(self, metarules=None) -> None:
-        # load (and verify?) metarules used during grounding
-        # if metarules is None, all provided are used
-        provided = []
-        for file in _pkg_resources.contents(_metarules):
-            if (
-                not _pkg_resources.is_resource(_metarules, file)
-                or file == "__init__.py"
-            ):
-                continue
-            provided.append(file[:-3])
-
-        if metarules is None:
-            self.metarules = provided
-            return
-
-        for rule in metarules:
-            if rule not in provided:
-                raise ValueError(f"metarule {rule} does not exist")
-        self.metarules = metarules
 
     def load_examples(self, file) -> None:
         # load examples from file, convert into internal representation

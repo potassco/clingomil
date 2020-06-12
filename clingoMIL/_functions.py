@@ -1,43 +1,28 @@
 import clingo
 from itertools import count
-import importlib.resources as pkg_resources
-
-from . import _metarules as metarules_resource
 
 
 def induced_program(symbols):
+    def predicate_formats():
+        for i in count(1):
+            yield "P{}".format(i)
+
+    string_substitutions = {
+        "chain": "{P1}(X,Y) :- {P2}(X,Z), {P3}(Z,Y).",
+        "postcon": "{P1}(X,Y) :- {P2}(X,Y), {P3}(Y).",
+        "precon": "{P1}(X,Y) :- {P2}(X), {P3}(X,Y).",
+        "tailrec": "{P1}(X,Y) :- {P2}(X,Z), {P1}(Z,Y).",
+    }
+
     metas = []
     for sym in symbols:
         if sym.match("meta", 4):
             metas.append(sym)
 
-    string_substitutions = []
-    for file in pkg_resources.contents(metarules_resource):
-        if (
-            not pkg_resources.is_resource(metarules_resource, file)
-            or file == "__init__.py"
-        ):
-            continue
-
-        ctl = clingo.Control()
-        with pkg_resources.path(metarules_resource, file) as path:
-            ctl.load(str(path))
-        ctl.ground([("string_substitution", [])])
-        ctl.solve(
-            on_model=lambda m: string_substitutions.extend(
-                m.symbols(shown=True)
-            )
-        )
-
-    def predicate_formats():
-        for i in count(1):
-            yield "P{}".format(i)
-
     program = []
     for meta in metas:
-        for subst in string_substitutions:
-            [meta_name, format_string] = subst.arguments
-            if meta_name == meta.arguments[0]:
+        for meta_name, format_string in string_substitutions.items():
+            if meta_name == meta.arguments[0].name:
                 predicates = []
                 for pred in meta.arguments[1:]:
                     if pred.type == clingo.SymbolType.Number:
@@ -52,7 +37,7 @@ def induced_program(symbols):
                         )
 
                 ps = dict(zip(predicate_formats(), predicates))
-                program.append(format_string.string.format_map(ps))
+                program.append(format_string.format_map(ps))
 
     return program
 
