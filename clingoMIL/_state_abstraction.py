@@ -4,7 +4,6 @@ from typing import List
 from collections import defaultdict
 import importlib.resources as pkg_resources
 
-from ._check_fail_pl import check_fail_pl
 from . import _encodings as encodings_resource
 
 
