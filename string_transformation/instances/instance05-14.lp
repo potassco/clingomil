@@ -1,2 +1,2 @@
-pos_ex(string,"[c,a,a,b,a,a]","[c]").
-neg_ex(string,"[c,b,b,a,a,a]","[c]").
+pos_ex(string,"[c,a,b,a,a,a]","[c]").
+neg_ex(string,"[c,a,b,b,b,a]","[c]").
