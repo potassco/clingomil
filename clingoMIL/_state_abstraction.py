@@ -139,22 +139,6 @@ def _make_sa_context(self, ids) -> object:
     return SAContext
 
 
-def check_fail(self, examples, meta_assignments, functional):
-    ctl = clingo.Control(arguments=["--warn=none"])
-
-    for symbol in [*examples, *meta_assignments]:
-        ctl.add("base", [], f"{str(symbol)}.")
-    with pkg_resources.path(encodings_resource, "check_fail.lp") as path:
-        ctl.load(str(path))
-
-    ctl.ground([("base", [])], context=self._make_fc_context()())
-    ctl.assign_external(clingo.Function("functional"), True)
-
-    model = []
-    ctl.solve(on_model=lambda m: model.extend(m.symbols(shown=True)))
-    return model == [clingo.Function("fail")]
-
-
 def expand(meta_assignment_fs, function):
     # expansion as used in check_fail_py
     # returns predicates that need to be true for rule body of rule with the
@@ -287,9 +271,10 @@ def _make_sa_propagator(self, functional) -> object:
             # as we return after adding the nogood, we dont have to
             # check for its return value (on False we MUST return,
             # but we do eitherway)
-            if check_fail_pl(self, examples, metas, functional):
-                control.add_nogood(inner_self.assigned_metas, lock=True)
-                return
+            for example in examples:
+                if check_fail_py(self, example, metas, functional):
+                    control.add_nogood(inner_self.assigned_metas, lock=True)
+                    return
 
     return SAPropagator
 
@@ -313,5 +298,5 @@ def _ground_sa(self, functional) -> None:
 
     context = self._make_sa_context(ids)
     self.control.ground(
-        [("base", []), ("examples", []),], context=context(),
+        [("base", []), ("examples", [])], context=context(),
     )

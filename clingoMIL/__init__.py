@@ -19,7 +19,12 @@ __all__ = [
 
 class clingoMIL:
 
-    from ._forward_chained import _make_fc_context, _ground_fc
+    from ._forward_chained import (
+        _make_fc_context,
+        _ground_fc,
+        _ground_pfc,
+        _ground_ufc,
+    )
     from ._state_abstraction import (
         _make_sa_context,
         _make_sa_propagator,
@@ -44,7 +49,7 @@ class clingoMIL:
         # resets the control, but with size and skolems added to arguments in
         # any case
         del self.control
-        if "arguments" not in kwargs:
+        if "arguments" not in kwargs.keys():
             kwargs["arguments"] = []
         kwargs["arguments"].extend(
             ["-c size={}".format(size), "-c skolems={}".format(skolems)]
@@ -64,9 +69,14 @@ class clingoMIL:
         )
 
     def ground(self, mode="fc", functional=False) -> None:
-        if mode not in ["fc", "sa"]:
-            raise ValueError("illegal mode, must be either 'fc' or 'sa'")
-        elif mode == "fc":
-            self._ground_fc(functional)
-        elif mode == "sa":
-            self._ground_sa(functional)
+        grounders = {
+            "fc": self._ground_fc,
+            "pfc": self._ground_pfc,
+            "ufc": self._ground_ufc,
+            "sa": self._ground_sa,
+        }
+        if mode not in grounders.keys():
+            raise ValueError(
+                f"illegal mode, must be in {list(grounders.keys())}"
+            )
+        grounders[mode](functional)

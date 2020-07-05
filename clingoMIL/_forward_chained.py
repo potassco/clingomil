@@ -31,7 +31,38 @@ def _ground_fc(self, functional) -> None:
 
     context = self._make_fc_context()
     self.control.ground(
-        [("base", []), ("examples", []),], context=context(),
+        [("base", []), ("examples", [])], context=context(),
+    )
+
+    self.control.assign_external(clingo.Function("functional"), functional)
+
+
+def _ground_pfc(self, functional) -> None:
+    propagator = self._make_sa_propagator(functional)
+    self.control.register_propagator(propagator())
+
+    example_strs = ["{}.".format(str(e)) for e in self.examples]
+    self.control.add("examples", [], "".join(example_strs))
+
+    with pkg_resources.path(encodings_resource, "clingomil_pfc.lp") as path:
+        self.control.load(str(path))
+
+    context = self._make_fc_context()
+    self.control.ground(
+        [("base", []), ("examples", [])], context=context(),
+    )
+
+
+def _ground_ufc(self, functional) -> None:
+    example_strs = ["{}.".format(str(e)) for e in self.examples]
+    self.control.add("examples", [], "".join(example_strs))
+
+    with pkg_resources.path(encodings_resource, "clingomil_ufc.lp") as path:
+        self.control.load(str(path))
+
+    context = self._make_fc_context()
+    self.control.ground(
+        [("base", []), ("examples", [])], context=context(),
     )
 
     self.control.assign_external(clingo.Function("functional"), functional)
