@@ -12,13 +12,13 @@ from string_transformation.strings_bk_clingo import StringsMIL
 
 
 benchmarks = [
-    ("robot", RobotMIL, "robot_strategies/instances"),
     ("trains", TrainsMIL, "east_west_trains/instances"),
-    ("strings", StringsMIL, "string_transformation/instances"),
+    ("strings", StringsMIL, "string_transformation/instances_original"),
+    ("robot", RobotMIL, "robot_strategies/instances"),
 ]
 times = {
-    "fc": {b[0]: defaultdict(dict) for b in benchmarks},
-    "sa": {b[0]: defaultdict(dict) for b in benchmarks},
+    mode: {b[0]: defaultdict(dict) for b in benchmarks}
+    for mode in ["fc", "pfc", "ufc", "sa"]
 }
 
 
@@ -32,14 +32,14 @@ def run_instance(milclass, mode, functional, instance, timeout):
         for skolems in range(0, size):
             mil.reset_control(size, skolems)
             print(
-                f"\r{'GROUNDING':11s} {name} with {mode} on {instance}: size "
-                + f"{size}, skolems {skolems}",
+                f"\r{'GROUNDING':11s} {name} with {mode:3s} on {instance}: "
+                + f"size {size}, skolems {skolems}",
                 end="",
             )
             mil.ground(mode=mode, functional=functional)
 
             print(
-                f"\r{'SOLVING':11s} {name} with {mode} on {instance}: size "
+                f"\r{'SOLVING':11s} {name} with {mode:3s} on {instance}: size "
                 + f"{size}, skolems {skolems}",
                 end="",
             )
@@ -59,18 +59,21 @@ def run_instance(milclass, mode, functional, instance, timeout):
                 if result.satisfiable or result.interrupted:
                     sat = "SATISFIABLE" if result.satisfiable else "TIMEOUT"
                     print(
-                        f"\r{sat:11s} {name} with {mode} on {instance}: "
+                        f"\r{sat:11s} {name} with {mode:3s} on {instance}: "
                         + f"size {size}, skolems {skolems} {time:.1f} seconds"
                     )
                     return result, model, time
 
 
 def main():
-    for mode in ["fc", "sa"]:
-        for name, milclass, instances in benchmarks:
-            is_robot = issubclass(milclass, RobotMIL)
-            for examples in sorted(os.listdir(instances))[:5]:
+    for name, milclass, instances in benchmarks:
+        is_robot = issubclass(milclass, RobotMIL)
+        for examples in sorted(os.listdir(instances)):
+            for mode in times.keys():
                 if mode == "fc" and is_robot:
+                    continue
+
+                if mode != "ufc":
                     continue
 
                 match = re.fullmatch(r"instance(\d+?)-(\d+?).lp", examples)

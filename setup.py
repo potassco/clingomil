@@ -21,11 +21,4 @@ setuptools.setup(
     python_requires=">=3.7",
     include_package_data=True,
     package_data={"clingoMIL._encodings": ["*"]},
-    install_requires=["pyswip"],
-    dependency_links=[
-        # "https://gitup.uni-potsdam.de/jliesen/pyswip/repository/archive.tar.gz#egg=pyswip-0.2.7",
-        # Here, we are using this version of pyswip, as it enables unification
-        # with strings and lists
-        "https://github.com/tkchouaki/pyswip/tarball/master#egg=pyswip-0.2.7",
-    ],
 )
