@@ -18,8 +18,8 @@ rstate(neg_ex,Y) :- neg_ex(_,_,Y).
 lstate(T,Y) :- lstate(T,X), binary_bg(_,X,Y).
 rstate(T,X) :- rstate(T,Y), binary_bg(_,X,Y).
 
-state(T,X) :- lstate(T,X), rstate(T,X).
-state(T,X) :- lstate(T,X), functional.
+state(T,X) :- not functional, lstate(T,X), rstate(T,X).
+state(T,X) :-     functional, lstate(T,X).
 
 
 % PREDICATE ORDER

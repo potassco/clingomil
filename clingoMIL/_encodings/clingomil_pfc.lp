@@ -24,10 +24,10 @@ order(X,Y) :- skolem(X), skolem(Y), X < Y.
 
 % METARULES
 may_deduced(P,X,Y) :- state(X), state(Y), binary_bg(P,X,Y).
-may_deduced(P1,X,Y) :- meta(precon,P1,P2,P3), unary_bg(P2,X), may_deduced(P3,X,Y).
-may_deduced(P1,X,Y) :- meta(postcon,P1,P2,P3), may_deduced(P2,X,Y), unary_bg(P3,Y).
-may_deduced(P1,X,Y) :- meta(chain,P1,P2,P3), may_deduced(P2,X,Z), may_deduced(P3,Z,Y).
-may_deduced(P1,X,Y) :- meta(tailrec,P1,P2,n), may_deduced(P2,X,Z), may_deduced(P1,Z,Y).
+may_deduced(P1,X,Y) :- may_meta(precon,P1,P2,P3), unary_bg(P2,X), may_deduced(P3,X,Y).
+may_deduced(P1,X,Y) :- may_meta(postcon,P1,P2,P3), may_deduced(P2,X,Y), unary_bg(P3,Y).
+may_deduced(P1,X,Y) :- may_meta(chain,P1,P2,P3), may_deduced(P2,X,Z), may_deduced(P3,Z,Y).
+may_deduced(P1,X,Y) :- may_meta(tailrec,P1,P2,n), may_deduced(P2,X,Z), may_deduced(P1,Z,Y).
 
 % precon, postcon, chain, tailrec
 may_meta(precon,P1,P2,P3) :- order(P1,P3), unary_bg(P2,X), may_deduced(P3,X,Y).

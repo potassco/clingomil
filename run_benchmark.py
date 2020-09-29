@@ -2,7 +2,7 @@
 
 import os
 import re
-import json
+import pandas as pd
 from itertools import count
 from collections import defaultdict
 from time import time as current_time
@@ -66,14 +66,12 @@ def run_instance(milclass, mode, functional, instance, timeout):
 
 
 def main():
+    data = []
     for name, milclass, instances in benchmarks:
         is_robot = issubclass(milclass, RobotMIL)
         for examples in sorted(os.listdir(instances)):
             for mode in times.keys():
-                if mode == "fc" and is_robot:
-                    continue
-
-                if mode != "ufc":
+                if mode in ["fc", "ufc"] and is_robot:
                     continue
 
                 match = re.fullmatch(r"instance(\d+?)-(\d+?).lp", examples)
@@ -87,9 +85,17 @@ def main():
                     60,
                 )
 
-                times[mode][name][size][num] = time
-                with open("times.json", "w") as f:
-                    json.dump(times, f, indent=2, sort_keys=True)
+                data.append(
+                    {
+                        "mode": mode,
+                        "name": name,
+                        "size": int(size),
+                        "num": int(num),
+                        "time": time,
+                        "result": str(result),
+                    }
+                )
+                pd.DataFrame(data).to_csv("times.csv")
 
 
 if __name__ == "__main__":
