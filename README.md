@@ -1,3 +1,6 @@
 # clingoMIL
 
-This repository contains a reimplementation of the HEXMIL system (Kaminski, Eiter and Inoue, found here: http://www.kr.tuwien.ac.at/research/projects/inthex/hexmil/) in clingo. It is the topic of my Bachelor thesis.
+This repository contains a re-implementation of the HEXMIL system 
+(Kaminski, Eiter and Inoue, found here: http://www.kr.tuwien.ac.at/research/projects/inthex/hexmil/) in clingo. 
+
+This is the result of the Bachelor thesis of Jarek Liesen.
