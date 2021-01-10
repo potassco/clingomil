@@ -59,24 +59,7 @@ class Background:
         self.binary_functions.append(binary_wrapper)
         return binary_wrapper
 
-    def load(self, filename):
-        # Examples are expected to be in the base subprogram
-        with open(filename, "r") as f:
-            self.add(f.read())
-
-    def add(self, program):
-        # loads background from a file, creates functions from it and adds them manually (to overgo symbol conversion)
-
-        control = clingo.Control()
-        control.add("base", [], program)
-        control.ground([("base", [])])
-
-        model = []
-        result = control.solve(on_model=lambda m: model.extend(m.symbols(shown=True)))
-
-        if not result.satisfiable:
-            raise RuntimeError("loaded background knowledge was unsatisfiable")
-
+    def _extend_background(self, model):
         # create functions for unary background functions. They return a boolean signalling that p(x) is in the background
         unary_bg = defaultdict(list)
         for symbol in filter(lambda s: s.match("unary_bg", 2), model):
@@ -100,12 +83,40 @@ class Background:
         for predicate, argument_dicts in binary_bg.items():
 
             def binary_bg_function(x):
-                print(x, list(argument_dicts.keys()))
                 if x in argument_dicts.keys():
                     yield from argument_dicts[x]
 
             binary_bg_function.__name__ = predicate.name
             self.binary_functions.append(binary_bg_function)
+
+    # TODO: this is essentially the same function as _add_load in the Examples class. Remove duplication
+    def _add_load(self, add=None, load=None):
+        # Examples are expected to be in the base subprogram
+        if add is None and load is None:
+            return
+
+        control = clingo.Control()
+        if add is not None:
+            control.add("base", [], add)
+        if load is not None:
+            control.load(load)
+        control.ground([("base", [])])
+
+        model = []
+        result = control.solve(on_model=lambda m: model.extend(m.symbols(shown=True)))
+
+        if not result.satisfiable:
+            raise RuntimeError("added or loaded background knowledge was unsatisfiable")
+
+        self._extend_background(model)
+
+    def load(self, filename):
+        self._add_load(load=filename)
+        return self
+
+    def add(self, program):
+        self._add_load(add=program)
+        return self
 
 
 # bk = Background()
