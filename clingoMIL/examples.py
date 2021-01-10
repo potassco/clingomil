@@ -38,3 +38,13 @@ class Examples:
 
     def __iter__(self):
         yield from self.examples
+    
+    def positive(self):
+        for example in self.examples:
+            if example.match("pos_ex", 3):
+                yield example
+
+    def negative(self):
+        for example in self.examples:
+            if example.match("neg_ex", 3):
+                yield example

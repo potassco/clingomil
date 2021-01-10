@@ -1,6 +1,7 @@
 import clingo
 from itertools import count
 
+# TODO: rename everything that has to do with MILSolver!!
 
 class MILSolver:
     def __init__(self):
@@ -18,6 +19,7 @@ class MILSolver:
     def solve(self, background, examples, functional, *args, **kwargs):
         for size in count(1):
             for skolems in range(0, size):
+                print(size, skolems)
                 self.reset_control(size, skolems)
                 self.ground(background, examples, functional, *args, **kwargs)
                 model = []

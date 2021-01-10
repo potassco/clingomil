@@ -2,7 +2,7 @@ import clingo
 from itertools import count
 import importlib.resources as pkg_resources
 
-from .MILSolver import MILSolver
+from . import MILSolver
 from .. import _encodings as encodings_resource
 
 
