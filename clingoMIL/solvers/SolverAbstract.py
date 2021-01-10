@@ -1,19 +1,19 @@
 import clingo
 from itertools import count
 
-# TODO: rename everything that has to do with MILSolver!!
 
-
-class MILSolver:
+class SolverAbstract:
     def __init__(self):
-        if type(self) == MILSolver:
-            raise RuntimeError(f"please only instantiate subclasses of {MILSolver}")
+        if type(self) == SolverAbstract:
+            raise RuntimeError(
+                f"please only instantiate subclasses of {SolverAbstract}"
+            )
 
         self.reset_control(0, 0)
 
     def ground(self, background, examples, functional):
         raise NotImplementedError(
-            f"subclasses of {MILSolver} must override {MILSolver.ground}"
+            f"subclasses of {SolverAbstract} must override {SolverAbstract.ground}"
         )
 
     # TODO: make args and kwargs optional arguments instead of consuming all arguments

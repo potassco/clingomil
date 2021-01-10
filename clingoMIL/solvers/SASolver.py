@@ -4,7 +4,7 @@ from typing import List
 from collections import defaultdict
 import importlib.resources as pkg_resources
 
-from . import MILSolver
+from . import SolverAbstract
 from .. import _encodings as encodings_resource
 
 
@@ -272,7 +272,7 @@ def _make_sa_propagator(background, examples, functional):
     return SAPropagator
 
 
-class SASolver(MILSolver):
+class SASolver(SolverAbstract):
     def ground(self, background, examples, functional):
         ids = IDMaker()
         propagator = _make_sa_propagator(background, examples, functional)

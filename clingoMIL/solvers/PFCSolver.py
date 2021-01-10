@@ -2,13 +2,13 @@ import clingo
 from itertools import count
 import importlib.resources as pkg_resources
 
-from . import MILSolver
+from . import SolverAbstract
 from .FCSolver import _make_fc_context
 from .SASolver import _make_sa_propagator
 from .. import _encodings as encodings_resource
 
 
-class PFCSolver(MILSolver):
+class PFCSolver(SolverAbstract):
     def ground(self, background, examples, functional) -> None:
         propagator = _make_sa_propagator(background, examples, functional)
         self.control.register_propagator(propagator())

@@ -2,12 +2,12 @@ import clingo
 from itertools import count
 import importlib.resources as pkg_resources
 
-from . import MILSolver
+from . import SolverAbstract
 from .FCSolver import _make_fc_context
 from .. import _encodings as encodings_resource
 
 
-class UFCSolver(MILSolver):
+class UFCSolver(SolverAbstract):
     def ground(self, background, examples, functional):
         example_strs = [f"{e}." for e in examples]
         self.control.add("examples", [], "".join(example_strs))

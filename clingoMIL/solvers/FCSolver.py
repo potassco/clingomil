@@ -2,7 +2,7 @@ import clingo
 from itertools import count
 import importlib.resources as pkg_resources
 
-from . import MILSolver
+from . import SolverAbstract
 from .. import _encodings as encodings_resource
 
 
@@ -21,7 +21,7 @@ def _make_fc_context(background):
     return FCContext
 
 
-class FCSolver(MILSolver):
+class FCSolver(SolverAbstract):
     def ground(self, background, examples, functional):
         example_strs = [f"{e}." for e in examples]
         self.control.add("examples", [], "".join(example_strs))
