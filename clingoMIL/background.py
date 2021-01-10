@@ -43,7 +43,7 @@ class Background:
         def unary_wrapper(symbol):
             var = from_symbol(symbol)
             return function(var)
-
+        unary_wrapper.__name__ = function.__name__
         self.unary_functions.append(unary_wrapper)
         return unary_wrapper
 
@@ -56,6 +56,7 @@ class Background:
                 # Yes, I know the clingo does this conversion itself
                 yield to_symbol(argument)
 
+        binary_wrapper.__name__ = function.__name__
         self.binary_functions.append(binary_wrapper)
         return binary_wrapper
 
