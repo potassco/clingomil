@@ -43,6 +43,7 @@ class Background:
         def unary_wrapper(symbol):
             var = from_symbol(symbol)
             return function(var)
+
         unary_wrapper.__name__ = function.__name__
         self.unary_functions.append(unary_wrapper)
         return unary_wrapper

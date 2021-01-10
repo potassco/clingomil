@@ -3,16 +3,30 @@ from itertools import count
 import importlib.resources as pkg_resources
 
 from . import MILSolver
-from .FCSolver import _make_fc_context
 from .. import _encodings as encodings_resource
 
 
-class UFCSolver(MILSolver):
+def _make_fc_context(background):
+    class FCContext:
+        def unary(self, symbol):
+            for f in background.unary_functions:
+                if f(symbol):
+                    yield clingo.Function(f.__name__)
+
+        def binary(self, symbol):
+            for f in background.binary_functions:
+                for result in f(symbol):
+                    yield (clingo.Function(f.__name__), result)
+
+    return FCContext
+
+
+class FCSolver(MILSolver):
     def ground(self, background, examples, functional):
         example_strs = [f"{e}." for e in examples]
         self.control.add("examples", [], "".join(example_strs))
 
-        with pkg_resources.path(encodings_resource, "clingomil_ufc.lp") as path:
+        with pkg_resources.path(encodings_resource, "clingomil_fc.lp") as path:
             self.control.load(str(path))
 
         context = _make_fc_context(background)

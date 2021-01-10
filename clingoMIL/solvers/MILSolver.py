@@ -3,6 +3,7 @@ from itertools import count
 
 # TODO: rename everything that has to do with MILSolver!!
 
+
 class MILSolver:
     def __init__(self):
         if type(self) == MILSolver:
@@ -19,11 +20,12 @@ class MILSolver:
     def solve(self, background, examples, functional, *args, **kwargs):
         for size in count(1):
             for skolems in range(0, size):
-                print(size, skolems)
                 self.reset_control(size, skolems)
                 self.ground(background, examples, functional, *args, **kwargs)
                 model = []
-                res = self.control.solve(on_model=lambda m: model.extend(m.symbols(shown=True)))
+                res = self.control.solve(
+                    on_model=lambda m: model.extend(m.symbols(shown=True))
+                )
                 if res.satisfiable:
                     return res, model
 
