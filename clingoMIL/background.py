@@ -119,23 +119,3 @@ class Background:
     def add(self, program):
         self._add_load(add=program)
         return self
-
-
-# bk = Background()
-# bk.add(
-#     """
-# unary_bg(test,1).
-# unary_bg(test, X+1) :- unary_bg(test, X), X < 10.
-# binary_bg(test, 3, "test").
-# """
-# )
-
-
-# @bk.unary_bg
-# def odd(x):
-#     return x % 2 == 1
-
-
-# print(bk.unary_functions[0](clingo.Number(10)))
-# print(list(bk.binary_functions[0](clingo.Number(3))))
-# print(bk.unary_functions[1](clingo.Number(2)), bk.unary_functions[1](clingo.Number(3)))
