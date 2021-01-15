@@ -12,7 +12,7 @@ class IDMaker:
     def __init__(self):
         self._ids = defaultdict(dict)
 
-    def get(self, obj, table=None) -> int:
+    def get(self, obj, table=None):
         if table is None:
             table = type(obj)
         if obj not in self._ids[table]:

@@ -9,7 +9,7 @@ from .. import _encodings as encodings_resource
 
 
 class PFCSolver(SolverAbstract):
-    def ground(self, background, examples, functional) -> None:
+    def ground(self, background, examples, functional):
         propagator = _make_sa_propagator(background, examples, functional)
         self.control.register_propagator(propagator())
 
